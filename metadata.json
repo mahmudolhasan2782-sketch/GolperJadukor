@@ -1,0 +1,5 @@
+{
+  "name": "গল্পের জাদুকর (Story Wizard)",
+  "description": "An AI-powered Bengali story generator that creates realistic, book-quality stories based on user inputs like character names and keywords.",
+  "requestFramePermissions": []
+}
