@@ -74,7 +74,7 @@ const App: React.FC = () => {
                 <BookOpenIcon className="w-6 h-6 text-[#8b7355]" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold tracking-wide">গল্পের জাদুকর</h1>
+              <h1 className="text-2xl font-bold tracking-wide">HemoWriter</h1>
               <p className="text-xs opacity-90 font-light">আপনার কল্পনায়, কৃত্রিম বুদ্ধিমত্তার ছোঁয়া</p>
             </div>
           </div>
@@ -120,7 +120,7 @@ const App: React.FC = () => {
 
       {/* Simple Footer */}
       <footer className="text-center text-[#8b7355] text-sm py-6 opacity-60">
-        &copy; {new Date().getFullYear()} গল্পের জাদুকর | Powered by Google Gemini
+        &copy; {new Date().getFullYear()} HemoWriter | @Hemontu Incorporation এর একটি ডিজিটাল সার্ভিস
       </footer>
     </div>
   );
