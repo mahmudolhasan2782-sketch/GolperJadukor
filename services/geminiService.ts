@@ -1,9 +1,10 @@
-import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
+import { GoogleGenAI } from "@google/genai";
 import { StoryParams } from "../types";
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-
-export const generateBengaliStoryStream = async (params: StoryParams) => {
+export const generateBengaliStoryStream = async (params: StoryParams, apiKey: string) => {
+  // Initialize AI client with the provided key dynamically
+  const ai = new GoogleGenAI({ apiKey: apiKey });
+  
   const modelId = "gemini-2.5-flash"; // Using Flash for speed and good creative writing capabilities
 
   const prompt = `
@@ -30,7 +31,7 @@ export const generateBengaliStoryStream = async (params: StoryParams) => {
       contents: prompt,
       config: {
         systemInstruction: "You are a legendary Bengali novelist known for realistic, emotional, and descriptive storytelling. Write only in Bengali.",
-        temperature: 0.8, // Slightly higher creative freedom
+        temperature: 0.8,
       },
     });
 

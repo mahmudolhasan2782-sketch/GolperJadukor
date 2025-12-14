@@ -1,12 +1,16 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import StoryInput from './components/StoryInput';
 import StoryReader from './components/StoryReader';
+import ApiKeyModal from './components/ApiKeyModal';
 import { generateBengaliStoryStream } from './services/geminiService';
 import { StoryParams, StoryState } from './types';
 import { BookOpenIcon } from './components/Icons';
 import { GenerateContentResponse } from '@google/genai';
 
 const App: React.FC = () => {
+  const [apiKey, setApiKey] = useState<string | null>(null);
+  const [showKeyModal, setShowKeyModal] = useState(false);
+
   const [storyState, setStoryState] = useState<StoryState>({
     content: '',
     isLoading: false,
@@ -14,7 +18,28 @@ const App: React.FC = () => {
     error: null,
   });
 
+  // Check for saved key on load
+  useEffect(() => {
+    const savedKey = localStorage.getItem('hemowriter_api_key');
+    if (savedKey) {
+      setApiKey(savedKey);
+    } else {
+      setShowKeyModal(true);
+    }
+  }, []);
+
+  const handleSaveKey = (key: string) => {
+    localStorage.setItem('hemowriter_api_key', key);
+    setApiKey(key);
+    setShowKeyModal(false);
+  };
+
   const handleGenerateStory = useCallback(async (params: StoryParams) => {
+    if (!apiKey) {
+      setShowKeyModal(true);
+      return;
+    }
+
     setStoryState({
       content: '',
       isLoading: true,
@@ -23,7 +48,7 @@ const App: React.FC = () => {
     });
 
     try {
-      const stream = await generateBengaliStoryStream(params);
+      const stream = await generateBengaliStoryStream(params, apiKey);
 
       for await (const chunk of stream) {
         const chunkResponse = chunk as GenerateContentResponse;
@@ -45,14 +70,25 @@ const App: React.FC = () => {
 
     } catch (error) {
       console.error(error);
+      let errorMessage = 'দুঃখিত, গল্পটি তৈরি করতে সমস্যা হয়েছে। অনুগ্রহ করে আবার চেষ্টা করুন।';
+      
+      // Basic check for API key errors
+      const errString = String(error);
+      if (errString.includes('401') || errString.includes('INVALID_ARGUMENT') || errString.includes('API key')) {
+        errorMessage = 'আপনার API Key টি সঠিক নয় বা মেয়াদোত্তীর্ণ। দয়া করে পেজটি রিফ্রেশ করে নতুন Key দিন।';
+        localStorage.removeItem('hemowriter_api_key');
+        setApiKey(null);
+        setTimeout(() => setShowKeyModal(true), 2000);
+      }
+
       setStoryState((prev) => ({
         ...prev,
         isLoading: false,
         isComplete: false,
-        error: 'দুঃখিত, গল্পটি তৈরি করতে সমস্যা হয়েছে। অনুগ্রহ করে আবার চেষ্টা করুন।',
+        error: errorMessage,
       }));
     }
-  }, []);
+  }, [apiKey]);
 
   const handleReset = () => {
     setStoryState({
@@ -66,6 +102,9 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen pb-12">
+      {/* API Key Modal */}
+      {showKeyModal && <ApiKeyModal onSave={handleSaveKey} />}
+
       {/* Header / Nav */}
       <header className="bg-[#8b7355] text-[#fdf6e3] shadow-md sticky top-0 z-50">
         <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
@@ -83,7 +122,7 @@ const App: React.FC = () => {
 
       <main className="max-w-4xl mx-auto px-4 py-8">
         
-        {/* Intro Text - Only show if no story is generated yet */}
+        {/* Intro Text */}
         {!storyState.content && !storyState.isLoading && (
             <div className="text-center mb-12 animate-fade-in">
                 <h2 className="text-3xl md:text-4xl font-bold text-[#5c4b37] mb-4">
@@ -95,7 +134,7 @@ const App: React.FC = () => {
             </div>
         )}
 
-        {/* Input Form - Hide when story is complete to focus on reading, or show if empty */}
+        {/* Input Form */}
         {(!storyState.isComplete || !storyState.content) && (
             <div className={`transition-all duration-500 ${storyState.content ? 'opacity-50 pointer-events-none filter blur-[1px]' : 'opacity-100'}`}>
                 <StoryInput onSubmit={handleGenerateStory} isLoading={storyState.isLoading} />
