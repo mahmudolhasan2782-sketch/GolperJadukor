@@ -1,16 +1,12 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import StoryInput from './components/StoryInput';
 import StoryReader from './components/StoryReader';
-import ApiKeyModal from './components/ApiKeyModal';
 import { generateBengaliStoryStream } from './services/geminiService';
 import { StoryParams, StoryState } from './types';
 import { BookOpenIcon } from './components/Icons';
 import { GenerateContentResponse } from '@google/genai';
 
 const App: React.FC = () => {
-  const [apiKey, setApiKey] = useState<string | null>(null);
-  const [showKeyModal, setShowKeyModal] = useState(false);
-
   const [storyState, setStoryState] = useState<StoryState>({
     content: '',
     isLoading: false,
@@ -18,28 +14,7 @@ const App: React.FC = () => {
     error: null,
   });
 
-  // Check for saved key on load
-  useEffect(() => {
-    const savedKey = localStorage.getItem('hemowriter_api_key');
-    if (savedKey) {
-      setApiKey(savedKey);
-    } else {
-      setShowKeyModal(true);
-    }
-  }, []);
-
-  const handleSaveKey = (key: string) => {
-    localStorage.setItem('hemowriter_api_key', key);
-    setApiKey(key);
-    setShowKeyModal(false);
-  };
-
   const handleGenerateStory = useCallback(async (params: StoryParams) => {
-    if (!apiKey) {
-      setShowKeyModal(true);
-      return;
-    }
-
     setStoryState({
       content: '',
       isLoading: true,
@@ -48,7 +23,8 @@ const App: React.FC = () => {
     });
 
     try {
-      const stream = await generateBengaliStoryStream(params, apiKey);
+      // API Key is now handled internally by the service
+      const stream = await generateBengaliStoryStream(params);
 
       for await (const chunk of stream) {
         const chunkResponse = chunk as GenerateContentResponse;
@@ -70,25 +46,14 @@ const App: React.FC = () => {
 
     } catch (error) {
       console.error(error);
-      let errorMessage = 'দুঃখিত, গল্পটি তৈরি করতে সমস্যা হয়েছে। অনুগ্রহ করে আবার চেষ্টা করুন।';
-      
-      // Basic check for API key errors
-      const errString = String(error);
-      if (errString.includes('401') || errString.includes('INVALID_ARGUMENT') || errString.includes('API key')) {
-        errorMessage = 'আপনার API Key টি সঠিক নয় বা মেয়াদোত্তীর্ণ। দয়া করে পেজটি রিফ্রেশ করে নতুন Key দিন।';
-        localStorage.removeItem('hemowriter_api_key');
-        setApiKey(null);
-        setTimeout(() => setShowKeyModal(true), 2000);
-      }
-
       setStoryState((prev) => ({
         ...prev,
         isLoading: false,
         isComplete: false,
-        error: errorMessage,
+        error: 'দুঃখিত, গল্পটি তৈরি করতে সমস্যা হয়েছে। অনুগ্রহ করে আবার চেষ্টা করুন।',
       }));
     }
-  }, [apiKey]);
+  }, []);
 
   const handleReset = () => {
     setStoryState({
@@ -102,9 +67,6 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen pb-12">
-      {/* API Key Modal */}
-      {showKeyModal && <ApiKeyModal onSave={handleSaveKey} />}
-
       {/* Header / Nav */}
       <header className="bg-[#8b7355] text-[#fdf6e3] shadow-md sticky top-0 z-50">
         <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">

@@ -1,9 +1,9 @@
 import { GoogleGenAI } from "@google/genai";
 import { StoryParams } from "../types";
 
-export const generateBengaliStoryStream = async (params: StoryParams, apiKey: string) => {
-  // Initialize AI client with the provided key dynamically
-  const ai = new GoogleGenAI({ apiKey: apiKey });
+export const generateBengaliStoryStream = async (params: StoryParams) => {
+  // Use the API key injected via Vite config
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   
   const modelId = "gemini-2.5-flash"; // Using Flash for speed and good creative writing capabilities
 
